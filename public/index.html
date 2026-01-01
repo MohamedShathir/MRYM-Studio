@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRYM Studio | Custom 3D Printed Gifts & Accessories</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo"><a href="index.html" style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a></div>
+                <ul class="nav-links">
+                    <li><a href="products.html?category=all">Collections</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                    <li>
+                        <button class="cart-icon-btn" onclick="toggleCart()">
+                            🛒 <span id="cart-count" class="cart-badge">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container hero-content">
+            <div class="label">CRAFTING JOY, LAYER BY LAYER</div>
+            <h1>Making Life A Little <br> More <span class="highlight">Playful</span>.</h1>
+            <p>Discover unique 3D printed keychains, custom toys, and stylish accessories designed to bring a smile to your face.</p>
+            
+            <div style="display: flex; gap: 20px; justify-content: center; margin-top: 50px;">
+                <a href="products.html?category=all" class="btn">Shop Collection</a>
+                <a href="#contact" class="btn btn-outline">Custom Order</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="collections">
+        <div class="container">
+            <div class="section-header">
+                <h2>Our Collections</h2>
+                <p>From pocket-sized companions to home decor.</p>
+            </div>
+            
+            <div class="grid">
+                <a href="products.html?category=keychains" style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <div class="card-icon">🔑</div>
+                        <h3>Keychains & Charms</h3>
+                        <p>Personalized name tags, cute characters, and durable everyday carry items.</p>
+                    </div>
+                </a>
+
+                <a href="products.html?category=toys" style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <div class="card-icon">🧸</div>
+                        <h3>Toys & Miniatures</h3>
+                        <p>Articulated dragons, fidget toys, and detailed miniatures for collectors.</p>
+                    </div>
+                </a>
+
+                <a href="products.html?category=accessories" style="text-decoration: none; color: inherit;">
+                    <div class="card">
+                        <div class="card-icon">✨</div>
+                        <h3>Accessories</h3>
+                        <p>Unique phone stands, desk organizers, and modern jewelry pieces.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="bg-secondary">
+        <div class="container">
+            <div class="form-box">
+                <h2>Custom Orders</h2>
+                <p>Want something specific? We can print it for you.</p>
+                
+                <form id="quoteForm">
+                    <div class="form-group">
+                        <label>Your Name</label>
+                        <input type="text" placeholder="Jane Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input type="email" placeholder="jane@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>What are you looking for?</label>
+                        <select>
+                            <option>Custom Keychain</option>
+                            <option>Bulk Order (Party Favors)</option>
+                            <option>Specific 3D Model Print</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea rows="4" placeholder="Tell us about your idea..."></textarea>
+                    </div>
+                    <button type="submit" class="btn full-width">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="logo small">MRYM<span>STUDIO</span></div>
+            <p>Creativity in every layer.</p>
+            <div class="socials">
+                <a href="#">Instagram</a> • <a href="#">Facebook</a> • <a href="#">TikTok</a>
+            </div>
+            <p class="copyright">&copy; 2025 MRYM Studio.</p>
+        </div>
+    </footer>
+
+    <div id="cart-modal" class="cart-modal">
+    
+    <div id="cart-view">
+        <div class="cart-header">
+            <h3>Your Cart</h3>
+            <button class="close-cart" onclick="closeCart()">×</button>
+        </div>
+        
+        <div id="cart-items" class="cart-items">
+            <p style="text-align:center; color:#999; margin-top:20px;">Cart is empty.</p>
+        </div>
+
+        <div class="cart-footer">
+            <div class="total-row">
+                <span>Total:</span>
+                <span id="cart-total">₹0.00</span>
+            </div>
+            <button class="btn full-width" style="background-color: var(--primary);" onclick="showPaymentScreen()">
+                Proceed to Pay
+            </button>
+        </div>
+    </div>
+
+    <div id="payment-view" style="display: none; padding: 20px; text-align: center; height: 100%; overflow-y: auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3 style="margin:0;">Payment</h3>
+            <button onclick="openCart()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:#666;">← Back</button>
+        </div>
+
+        <p style="margin-bottom: 10px;">Total Amount:</p>
+        <h2 id="pay-amount-display" style="font-size: 2rem; color: var(--primary); margin-bottom: 20px;">₹0.00</h2>
+
+        <div style="background: white; padding: 10px; display: inline-block; border: 1px solid #ccc; margin-bottom: 20px;">
+            <img id="upi-qr" src="" alt="Scan to Pay" style="width: 150px; height: 150px;">
+            <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">Scan with GPay/PhonePe</p>
+        </div>
+
+        <a id="pay-now-btn" href="#" class="btn full-width" style="background-color: #25D366; color: white; margin-bottom: 15px; display: block; text-align: center; text-decoration: none;">
+            Tap to Pay on GPay
+        </a>
+
+        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
+
+        <p style="font-size: 0.9rem; margin-bottom: 15px;">After paying, please send the order details along with the screenshot.</p>
+
+        <button class="btn full-width" onclick="sendOrderToWhatsApp()">
+            Confirm on WhatsApp
+        </button>
+    </div>
+
+</div>
+
+    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
