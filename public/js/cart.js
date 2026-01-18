@@ -1,137 +1,158 @@
-// CONFIGURATION
-const PHONE_NUMBER = "918148010579"; // Your WhatsApp Number
-const UPI_ID = "mshathir2312@oksbi";       // <--- REPLACE THIS WITH YOUR ACTUAL UPI ID (e.g., mobile@okaxis)
-const PAYEE_NAME = "MRYM Studio";    // The name displayed in GPay
+import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// State
+const PHONE_NUMBER = "918148010579";
 let cart = JSON.parse(localStorage.getItem('mrym-cart')) || [];
+let currentUser = null;
 
-// --- 1. Add to Cart ---
-function addToCart(product) {
-    const existingItem = cart.find(item => item.name === product.name);
-    if (existingItem) {
-        existingItem.quantity += 1;
+// --- 1. Header & Auth Logic ---
+onAuthStateChanged(auth, async (user) => {
+    const authContainer = document.getElementById('auth-container');
+
+    if (user) {
+        currentUser = user;
+        
+        // LOGGED IN: Show Profile Dropdown
+        if(authContainer) {
+            authContainer.innerHTML = `
+                <div class="profile-dropdown">
+                    <button class="profile-btn" onclick="toggleProfileMenu()">
+                        Hi, ${user.displayName ? user.displayName.split(' ')[0] : 'User'} ▼
+                    </button>
+                    <div id="dropdown-menu" class="dropdown-menu">
+                        <a href="account.html">Account Settings</a>
+                        <button onclick="handleLogout()" style="color:red;">Logout</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Load Cart from DB
+        const docSnap = await getDoc(doc(db, "users", user.uid));
+        if (docSnap.exists() && docSnap.data().cart) {
+            cart = docSnap.data().cart;
+            updateCartUI();
+        }
     } else {
-        cart.push({
-            name: product.name,
-            price: parseFloat(product.price),
-            quantity: 1
-        });
+        // LOGGED OUT: Show Signup & Login Links
+        currentUser = null;
+        if(authContainer) {
+            authContainer.innerHTML = `
+                <a href="signup.html" style="text-decoration:none; color:inherit; font-weight:500;">Signup</a>
+                <a href="login.html" class="btn-sm">Login</a>
+            `;
+        }
     }
+});
+
+// --- 2. Dropdown & Logout Functions ---
+window.toggleProfileMenu = function() {
+    const menu = document.getElementById("dropdown-menu");
+    if(menu) menu.classList.toggle("show");
+}
+
+window.onclick = function(event) {
+    if (!event.target.matches('.profile-btn')) {
+        const dropdowns = document.getElementsByClassName("dropdown-menu");
+        for (let i = 0; i < dropdowns.length; i++) {
+            if (dropdowns[i].classList.contains('show')) {
+                dropdowns[i].classList.remove('show');
+            }
+        }
+    }
+}
+
+window.handleLogout = async function() {
+    try {
+        await signOut(auth);
+        cart = [];
+        localStorage.removeItem('mrym-cart');
+        window.location.href = "login.html";
+    } catch (error) {
+        alert("Logout failed: " + error.message);
+    }
+};
+
+// ... (KEEP THE REST OF YOUR CART LOGIC: addToCart, removeFromCart, saveCart, updateCartUI, checkout) ...
+// (If you want me to paste the full file again, let me know, but the bottom half remains unchanged)
+// --- 3. Cart Logic (Standard) ---
+window.addToCart = async function(product) {
+    const existing = cart.find(item => item.name === product.name);
+    if (existing) existing.quantity++;
+    else cart.push({ ...product, quantity: 1 });
     saveCart();
     updateCartUI();
     openCart();
-}
+};
 
-// --- 2. Save & Update UI ---
-function saveCart() {
-    localStorage.setItem('mrym-cart', JSON.stringify(cart));
-}
-
-function updateCartUI() {
-    const cartCount = document.getElementById('cart-count');
-    const cartItemsContainer = document.getElementById('cart-items');
-    const cartTotal = document.getElementById('cart-total');
-    
-    // Update Badge
-    const totalQty = cart.reduce((sum, item) => sum + item.quantity, 0);
-    cartCount.textContent = totalQty;
-    
-    // Calculate Total
-    let totalPrice = 0;
-    cartItemsContainer.innerHTML = '';
-
-    cart.forEach((item, index) => {
-        totalPrice += item.price * item.quantity;
-        
-        const itemEl = document.createElement('div');
-        itemEl.classList.add('cart-item');
-        itemEl.innerHTML = `
-            <div class="item-details">
-                <h4>${item.name}</h4>
-                <p>₹${item.price.toFixed(2)} x ${item.quantity}</p>
-            </div>
-            <button class="remove-btn" onclick="removeFromCart(${index})">×</button>
-        `;
-        cartItemsContainer.appendChild(itemEl);
-    });
-
-    cartTotal.textContent = "₹" + totalPrice.toFixed(2);
-}
-
-// --- 3. Remove Item ---
-function removeFromCart(index) {
+window.removeFromCart = function(index) {
     cart.splice(index, 1);
     saveCart();
     updateCartUI();
-}
+};
 
-// --- 4. Toggle Cart Modal ---
-function toggleCart() {
-    // Reset to cart view if it was in payment mode
-    document.getElementById('cart-view').style.display = 'block';
-    document.getElementById('payment-view').style.display = 'none';
-    document.getElementById('cart-modal').classList.toggle('active');
-}
-function openCart() {
-    document.getElementById('cart-view').style.display = 'block';
-    document.getElementById('payment-view').style.display = 'none';
-    document.getElementById('cart-modal').classList.add('active');
-}
-function closeCart() {
-    document.getElementById('cart-modal').classList.remove('active');
-}
-
-// --- 5. NEW: Proceed to Payment Screen ---
-function showPaymentScreen() {
-    if (cart.length === 0) {
-        alert("Your cart is empty!");
-        return;
+async function saveCart() {
+    if (currentUser) {
+        await updateDoc(doc(db, "users", currentUser.uid), { cart: cart });
+    } else {
+        localStorage.setItem('mrym-cart', JSON.stringify(cart));
     }
-
-    const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2);
-
-    // 1. Construct UPI Link
-    // Format: upi://pay?pa=UPI_ID&pn=NAME&am=AMOUNT&cu=INR
-    const upiLink = `upi://pay?pa=${UPI_ID}&pn=${encodeURIComponent(PAYEE_NAME)}&am=${totalPrice}&cu=INR`;
-
-    // 2. Generate QR Code (using free API)
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(upiLink)}`;
-
-    // 3. Update DOM Elements
-    document.getElementById('pay-amount-display').textContent = "₹" + totalPrice;
-    document.getElementById('upi-qr').src = qrCodeUrl;
-    document.getElementById('pay-now-btn').href = upiLink;
-
-    // 4. Switch Views
-    document.getElementById('cart-view').style.display = 'none';
-    document.getElementById('payment-view').style.display = 'block';
 }
 
-// --- 6. Final Step: WhatsApp Redirect ---
-function sendOrderToWhatsApp() {
-    let message = "Hi MRYM Studio! I have completed the payment.\n\n*Order Details:*\n";
+function updateCartUI() {
+    const countEl = document.getElementById('cart-count');
+    if(countEl) countEl.textContent = cart.reduce((acc, item) => acc + item.quantity, 0);
+    
+    const container = document.getElementById('cart-items');
+    if(!container) return;
+
+    container.innerHTML = '';
     let total = 0;
 
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        message += `- ${item.name} (x${item.quantity}) : ₹${itemTotal.toFixed(2)}\n`;
-        total += itemTotal;
+    cart.forEach((item, index) => {
+        total += item.price * item.quantity;
+        const div = document.createElement('div');
+        div.classList.add('cart-item');
+        div.innerHTML = `
+            <div><h4>${item.name}</h4><p>₹${item.price} x ${item.quantity}</p></div>
+            <button class="remove-btn" onclick="removeFromCart(${index})">×</button>
+        `;
+        container.appendChild(div);
     });
-
-    message += `\n*Total Paid: ₹${total.toFixed(2)}*`;
-    message += `\n\n(I will attach the payment screenshot in the next message)`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${PHONE_NUMBER}?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
     
-    // Optional: Clear cart after order is sent
-    // cart = [];
-    // saveCart();
-    // updateCartUI();
-    // closeCart();
+    const totalEl = document.getElementById('cart-total');
+    if(totalEl) totalEl.textContent = "₹" + total.toFixed(2);
 }
+
+window.checkout = async function() {
+    if (cart.length === 0) return alert("Cart is empty!");
+
+    // Fetch Address for checkout message
+    let addressInfo = "";
+    if (currentUser) {
+        const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+        if (docSnap.exists() && docSnap.data().address) {
+            addressInfo = `\n\n*Shipping Address:*\n${docSnap.data().address}`;
+        }
+    }
+
+    let msg = "👋 Hi MRYM Studio! New Order:\n\n";
+    let total = 0;
+    cart.forEach(item => {
+        msg += `- ${item.name} (x${item.quantity}): ₹${(item.price*item.quantity).toFixed(2)}\n`;
+        total += item.price * item.quantity;
+    });
+    msg += `\n*Total: ₹${total.toFixed(2)}*`;
+    msg += addressInfo;
+    msg += `\n\nPlease send payment QR.`;
+    
+    window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+};
+
+// Toggle Modal
+window.toggleCart = () => document.getElementById('cart-modal').classList.toggle('active');
+window.openCart = () => document.getElementById('cart-modal').classList.add('active');
+window.closeCart = () => document.getElementById('cart-modal').classList.remove('active');
 
 document.addEventListener('DOMContentLoaded', updateCartUI);

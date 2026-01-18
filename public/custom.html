@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom Order | MRYM Studio</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <header>
+    <div class="container">
+      <nav>
+        <div class="logo"><a href="index.html" style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a>
+        </div>
+        <ul class="nav-links">
+          <li><a href="products.html?category=all">Collections</a></li>
+          <li><a href="custom.html">Custom Order</a></li>
+
+          <li id="auth-container" style="display: flex; gap: 15px;">
+            <a href="signup.html">Signup</a>
+            <a href="login.html" class="btn-sm">Login</a>
+          </li>
+
+          <li>
+            <button class="cart-icon-btn" onclick="toggleCart()">
+              🛒 <span id="cart-count" class="cart-badge">0</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container" style="padding-top: 150px;">
+    <div class="form-box">
+      <h2>Upload Your Design</h2>
+      <p>We accept .STL, .STEP files and reference images.</p>
+
+      <form id="uploadForm">
+        <div class="form-group">
+          <label>Project Name</label>
+          <input type="text" id="proj-name" required placeholder="e.g. Iron Man Helmet">
+        </div>
+
+        <div class="form-group">
+          <label>3D Model File (.stl, .step)</label>
+          <input type="file" id="model-file" accept=".stl,.step,.stp" required>
+          <p class="note" style="font-size:0.8rem; color:#666;">Max size: 10MB</p>
+        </div>
+
+        <div class="form-group">
+          <label>Reference Photo (Optional)</label>
+          <input type="file" id="ref-image" accept="image/*">
+        </div>
+
+        <div class="form-group">
+          <label>Instructions</label>
+          <textarea id="instructions" rows="4" placeholder="Size, color, infill density..."></textarea>
+        </div>
+
+        <p id="status-msg" style="text-align:center; font-weight:bold; color:var(--primary); margin-top:10px;"></p>
+
+        <button type="submit" id="submit-btn" class="btn full-width">Submit for Quote</button>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, auth } from "./js/firebase-config.js";
+    import { collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // --- CLOUDINARY CREDENTIALS ---
+    const CLOUD_NAME = "dmyxbwrvn";
+    const UPLOAD_PRESET = "mrym_uploads";
+    // ------------------------------
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        sessionStorage.setItem('redirectAfterLogin', 'custom.html');
+        alert("Please log in to upload files.");
+        window.location.href = "login.html";
+      }
+    });
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submit-btn');
+      const status = document.getElementById('status-msg');
+
+      btn.disabled = true;
+      btn.textContent = "Processing...";
+
+      try {
+        status.textContent = "Uploading 3D Model... (0%)";
+        const modelFile = document.getElementById('model-file').files[0];
+        const modelUrl = await uploadToCloudinary(modelFile, 'raw');
+
+        let imgUrl = "";
+        const imgFile = document.getElementById('ref-image').files[0];
+        if (imgFile) {
+          status.textContent = "Uploading Reference Image...";
+          imgUrl = await uploadToCloudinary(imgFile, 'image');
+        }
+
+        status.textContent = "Finalizing Order...";
+
+        await addDoc(collection(db, "custom_orders"), {
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email,
+          userName: auth.currentUser.displayName || "Customer",
+          projectName: document.getElementById('proj-name').value,
+          modelUrl: modelUrl,
+          referenceImgUrl: imgUrl,
+          instructions: document.getElementById('instructions').value,
+          status: "pending_review",
+          createdAt: new Date().toISOString()
+        });
+
+        alert("Order Submitted Successfully!");
+        window.location.href = "index.html";
+
+      } catch (error) {
+        console.error(error);
+        status.textContent = "Error: " + error.message;
+        btn.disabled = false;
+        btn.textContent = "Submit for Quote";
+      }
+    });
+
+    async function uploadToCloudinary(file, resourceType) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", UPLOAD_PRESET);
+      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
+      const res = await fetch(url, { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed. Check file size.");
+      const data = await res.json();
+      return data.secure_url;
+    }
+  </script>
+</body>
+
+</html>

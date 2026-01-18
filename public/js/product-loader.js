@@ -1,85 +1,55 @@
 document.addEventListener('DOMContentLoaded', () => {
-    
     const urlParams = new URLSearchParams(window.location.search);
     const category = urlParams.get('category') || 'all';
 
     const pageTitle = document.getElementById('page-title');
-    if(category !== 'all') {
-        pageTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1);
-    } else {
-        pageTitle.textContent = "All Products";
-    }
+    if(pageTitle) pageTitle.textContent = category === 'all' ? "All Products" : category.charAt(0).toUpperCase() + category.slice(1);
 
     fetch('data/products.csv')
-        .then(response => response.text())
+        .then(res => res.text())
         .then(csvText => {
             const products = csvToJSON(csvText);
-            const productGrid = document.getElementById('product-grid');
-            productGrid.innerHTML = ''; 
+            const grid = document.getElementById('product-grid');
+            if(!grid) return;
+            
+            grid.innerHTML = '';
+            const filtered = products.filter(p => category === 'all' || p.category.trim().toLowerCase() === category.toLowerCase());
 
-            const filteredProducts = products.filter(product => {
-                if (category === 'all') return true;
-                return product.category.trim().toLowerCase() === category.toLowerCase();
-            });
-
-            if (filteredProducts.length === 0) {
-                productGrid.innerHTML = '<p style="text-align:center; grid-column: 1/-1;">No products found in this category.</p>';
+            if(filtered.length === 0) {
+                grid.innerHTML = '<p>No products found.</p>';
                 return;
             }
 
-            filteredProducts.forEach(product => {
-                const productCard = document.createElement('div');
-                productCard.classList.add('product-card');
-                
-                const safeName = product.name.replace(/'/g, "\\'");
-
-                productCard.innerHTML = `
+            filtered.forEach(p => {
+                const safeName = p.name.replace(/'/g, "\\'");
+                const card = document.createElement('div');
+                card.classList.add('product-card');
+                card.innerHTML = `
                     <div class="product-img">
-                        <img src="assets/images/${product.image}" 
-                             alt="${product.name}" 
-                             style="width: 100%; height: 100%; object-fit: cover;"
-                             onerror="this.onerror=null; this.src='https://placehold.co/300x300?text=No+Image';">
+                        <img src="assets/images/${p.image}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://placehold.co/300?text=No+Image'">
                     </div>
                     <div class="product-info">
-                        <h3>${product.name}</h3>
-                        <p>${product.description}</p>
+                        <h3>${p.name}</h3>
                         <div class="price-row">
-                            <span class="price">₹${parseFloat(product.price).toFixed(2)}</span>
-                            
-                            <button class="btn-sm" 
-                                onclick="addToCart({
-                                    name: '${safeName}', 
-                                    price: ${product.price}
-                                })">
-                                Add to Cart
-                            </button>
-
+                            <span>₹${parseFloat(p.price).toFixed(2)}</span>
+                            <button class="btn-sm" onclick="addToCart({name:'${safeName}', price:${p.price}})">Add</button>
                         </div>
                     </div>
                 `;
-                productGrid.appendChild(productCard);
+                grid.appendChild(card);
             });
-        })
-        .catch(error => console.error('Error loading products:', error));
+        });
 });
 
-function csvToJSON(csvText) {
-    const lines = csvText.trim().split('\n');
+function csvToJSON(csv) {
+    const lines = csv.trim().split('\n');
     const headers = lines[0].trim().split(',');
-    
     const result = [];
-
-    for (let i = 1; i < lines.length; i++) {
-        if (!lines[i].trim()) continue;
-
-        const currentLine = lines[i].split(',');
+    for(let i=1; i<lines.length; i++) {
+        if(!lines[i].trim()) continue;
         const obj = {};
-
-        for (let j = 0; j < headers.length; j++) {
-            const key = headers[j].trim();
-            const value = currentLine[j] ? currentLine[j].trim() : "";
-            obj[key] = value;
-        }
+        const currentline = lines[i].split(',');
+        headers.forEach((h, j) => obj[h.trim()] = currentline[j].trim());
         result.push(obj);
     }
     return result;

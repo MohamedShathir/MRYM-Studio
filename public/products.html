@@ -1,23 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Shop | MRYM Studio</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
     <header>
         <div class="container">
             <nav>
-                <div class="logo"><a href="index.html" style="color:inherit; text-decoration:none;">MRYM<span>STUDIO</span></a></div>
+                <div class="logo"><a href="index.html"
+                        style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a></div>
                 <ul class="nav-links">
-                    <li><a href="products.html?category=all">All Products</a></li>
-                    <li><a href="products.html?category=toys">Toys</a></li>
-                    <li><a href="products.html?category=keychains">Keychains</a></li>
-                    <li><a href="products.html?category=accessories">Accessories</a></li>
-                    <li><a href="index.html#contact">Contact</a></li>
+                    <li><a href="products.html?category=all">Collections</a></li>
+                    <li><a href="custom.html">Custom Order</a></li>
+
+                    <li id="auth-container" style="display: flex; gap: 15px;">
+                        <a href="signup.html">Signup</a>
+                        <a href="login.html" class="btn-sm">Login</a>
+                    </li>
+
                     <li>
                         <button class="cart-icon-btn" onclick="toggleCart()">
                             🛒 <span id="cart-count" class="cart-badge">0</span>
@@ -30,8 +36,6 @@
 
     <section class="container" style="padding-top: 150px;">
         <h1 id="page-title">All Products</h1>
-        <p id="page-desc" style="text-align: center; margin-bottom: 50px;">Browse our unique collection.</p>
-        
         <div style="text-align: center; margin-bottom: 40px;">
             <a href="products.html?category=all" class="btn-sm">All</a>
             <a href="products.html?category=toys" class="btn-sm">Toys</a>
@@ -44,65 +48,28 @@
         </div>
     </section>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 MRYM Studio.</p>
-        </div>
-    </footer>
-
     <div id="cart-modal" class="cart-modal">
-    
-    <div id="cart-view">
-        <div class="cart-header">
-            <h3>Your Cart</h3>
-            <button class="close-cart" onclick="closeCart()">×</button>
-        </div>
-        
-        <div id="cart-items" class="cart-items">
-            <p style="text-align:center; color:#999; margin-top:20px;">Cart is empty.</p>
-        </div>
-
-        <div class="cart-footer">
-            <div class="total-row">
-                <span>Total:</span>
-                <span id="cart-total">₹0.00</span>
+        <div id="cart-view">
+            <div class="cart-header">
+                <h3>Your Cart</h3>
+                <button class="close-cart" onclick="closeCart()">×</button>
             </div>
-            <button class="btn full-width" style="background-color: var(--primary);" onclick="showPaymentScreen()">
-                Proceed to Pay
-            </button>
+            <div id="cart-items" class="cart-items">
+                <p style="text-align:center; color:#999; margin-top:20px;">Cart is empty.</p>
+            </div>
+            <div class="cart-footer">
+                <div class="total-row">
+                    <span>Total:</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+                <button class="btn full-width" onclick="checkout()">Checkout via WhatsApp</button>
+            </div>
         </div>
     </div>
 
-    <div id="payment-view" style="display: none; padding: 20px; text-align: center; height: 100%; overflow-y: auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h3 style="margin:0;">Payment</h3>
-            <button onclick="openCart()" style="background:none; border:none; cursor:pointer; font-size:1rem; color:#666;">← Back</button>
-        </div>
-
-        <p style="margin-bottom: 10px;">Total Amount:</p>
-        <h2 id="pay-amount-display" style="font-size: 2rem; color: var(--primary); margin-bottom: 20px;">₹0.00</h2>
-
-        <div style="background: white; padding: 10px; display: inline-block; border: 1px solid #ccc; margin-bottom: 20px;">
-            <img id="upi-qr" src="" alt="Scan to Pay" style="width: 150px; height: 150px;">
-            <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">Scan with GPay/PhonePe</p>
-        </div>
-
-        <a id="pay-now-btn" href="#" class="btn full-width" style="background-color: #25D366; color: white; margin-bottom: 15px; display: block; text-align: center; text-decoration: none;">
-            Tap to Pay on GPay
-        </a>
-
-        <hr style="border: 0; border-top: 1px dashed #ccc; margin: 20px 0;">
-
-        <p style="font-size: 0.9rem; margin-bottom: 15px;">After paying, please send the order details along with the screenshot.</p>
-
-        <button class="btn full-width" onclick="sendOrderToWhatsApp()">
-            Confirm on WhatsApp
-        </button>
-    </div>
-
-</div>
-
-    <script src="js/cart.js"></script>
+    <script src="js/main.js"></script>
     <script src="js/product-loader.js"></script>
+    <script type="module" src="js/cart.js"></script>
 </body>
+
 </html>

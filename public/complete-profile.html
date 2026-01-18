@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Profile | MRYM Studio</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo"><a href="#" style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a></div>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container" style="padding-top: 120px; max-width: 500px;">
+        <div class="form-box">
+            <h2>One Last Step!</h2>
+            <p>Please complete your profile to continue.</p>
+
+            <form id="complete-profile-form" style="text-align: left; margin-top: 20px;">
+                <div class="form-group">
+                    <label>First Name</label>
+                    <input type="text" id="fname" required>
+                </div>
+                <div class="form-group">
+                    <label>Last Name</label>
+                    <input type="text" id="lname" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone" placeholder="+91..." required>
+                </div>
+                <div class="form-group">
+                    <label>Shipping Address</label>
+                    <textarea id="address" rows="3" placeholder="Street, City, Pincode" required></textarea>
+                </div>
+
+                <button type="submit" class="btn full-width">Save & Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from "./js/firebase-config.js";
+        import { onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // 1. Check Login & Prefill Data
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Try to split the Google Name into First/Last
+                if (user.displayName) {
+                    const names = user.displayName.split(' ');
+                    document.getElementById('fname').value = names[0] || "";
+                    document.getElementById('lname').value = names.slice(1).join(' ') || "";
+                }
+            } else {
+                // If they aren't logged in via Google, send them back
+                window.location.href = "login.html";
+            }
+        });
+
+        // 2. Handle Form Submit
+        document.getElementById('complete-profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+
+            const user = auth.currentUser;
+            if (!user) return;
+
+            const fname = document.getElementById('fname').value;
+            const lname = document.getElementById('lname').value;
+            const fullName = `${fname} ${lname}`.trim();
+            const phone = document.getElementById('phone').value;
+            const address = document.getElementById('address').value;
+
+            try {
+                // Save to Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    name: fullName,
+                    email: user.email,
+                    phone: phone,
+                    address: address,
+                    cart: [],
+                    createdAt: new Date()
+                });
+
+                // Update Auth Profile (so "Hi Name" works immediately)
+                await updateProfile(user, { displayName: fullName });
+
+                // Done! Go to Home
+                window.location.href = "index.html";
+
+            } catch (error) {
+                console.error(error);
+                alert("Error saving profile: " + error.message);
+                btn.textContent = "Save & Continue";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

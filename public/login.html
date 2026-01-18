@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | MRYM Studio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-container { max-width: 400px; margin: 150px auto; padding: 30px; border: 1px solid #ddd; border-radius: 8px; text-align: center; }
+        .hidden { display: none; }
+        .toggle-link { color: var(--primary); cursor: pointer; text-decoration: underline; margin-top: 15px; display: block;}
+        
+        /* Divider Style */
+        .divider { margin: 20px 0; display: flex; align-items: center; text-align: center; color: #999; font-size: 0.8rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #ddd; }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
+        /* Google Button Style */
+        .btn-google { background-color: white; color: #333; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-google:hover { background-color: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav><div class="logo"><a href="index.html" style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a></div></nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="login-box" class="auth-container">
+            <h2>Welcome Back</h2>
+            
+            <button id="google-btn" class="btn full-width btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width:18px;">
+                Sign in with Google
+            </button>
+
+            <div class="divider">OR</div>
+
+            <form id="login-form">
+                <div class="form-group"><input type="email" id="login-email" placeholder="Email" required></div>
+                <div class="form-group"><input type="password" id="login-password" placeholder="Password" required></div>
+                <button type="submit" class="btn full-width">Log In</button>
+            </form>
+            <span class="toggle-link" onclick="toggleAuth()">Need an account? Sign Up</span>
+        </div>
+
+        <div id="signup-box" class="auth-container hidden">
+            <h2>Create Account</h2>
+            <form id="signup-form">
+                <div class="form-group"><input type="text" id="signup-name" placeholder="Full Name" required></div>
+                <div class="form-group"><input type="email" id="signup-email" placeholder="Email" required></div>
+                <div class="form-group"><input type="password" id="signup-password" placeholder="Password (Min 6 chars)" required></div>
+                <button type="submit" class="btn full-width">Sign Up</button>
+            </form>
+            <span class="toggle-link" onclick="toggleAuth()">Have an account? Log In</span>
+        </div>
+    </div>
+    <script type="module" src="js/auth.js"></script>
+    <script>
+        function toggleAuth() {
+            document.getElementById('login-box').classList.toggle('hidden');
+            document.getElementById('signup-box').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
