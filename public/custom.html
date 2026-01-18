@@ -1,102 +1,210 @@
-<script type="module">
-  import { db, auth } from "./js/firebase-config.js";
-  import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-  import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
 
-  // 1. Cloudinary Config (Updated from your screenshots)
-  const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dmyxbwrvn/upload";
-  const UPLOAD_PRESET = "mrym_uploads";
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Order | MRYM Studio</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
 
-  // 2. Google Script URL (Paste your Web App URL here)
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyN6eCipJDecsJfJBG8ck3FXrh-7-yy6JYSwxRAQd7UkdkhOGXaDrGPfjssXr5kFFmYfg/exec";
+<body>
 
-  let currentUser = null;
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo"><a href="index.html"
+                        style="text-decoration:none; color:inherit;">MRYM<span>STUDIO</span></a></div>
+                <ul class="nav-links">
+                    <li><a href="products.html?category=all">Collections</a></li>
+                    <li><a href="custom.html">Custom Order</a></li>
 
-  // Check Login
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      currentUser = user;
-    } else {
-      window.location.href = "login.html";
-    }
-  });
+                    <li id="auth-container">
+                        <a href="signup.html">Signup</a>
+                        <a href="login.html" class="btn-sm">Login</a>
+                    </li>
 
-  // Handle Form Submit
-  document.getElementById('custom-order-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
+                    <li>
+                        <button class="cart-icon-btn" onclick="toggleCart()">
+                            🛒 <span id="cart-count" class="cart-badge">0</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
-    const btn = e.target.querySelector('button');
-    btn.textContent = "Uploading...";
-    btn.disabled = true;
+    <section class="container" style="padding-top: 150px; max-width: 600px;">
+        <h1 style="text-align: center; margin-bottom: 10px;">Custom 3D Print Request</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 40px;">
+            Upload your STL file or describe your idea, and we'll bring it to life.
+        </p>
 
-    const projectName = document.getElementById('project-name').value;
-    const instructions = document.getElementById('instructions').value;
-    const file = document.getElementById('stl-file').files[0];
-    const refFile = document.getElementById('ref-img').files[0];
+        <div class="form-box">
+            <form id="custom-order-form">
+                
+                <div class="form-group">
+                    <label>Project Name</label>
+                    <input type="text" id="project-name" placeholder="E.g., Custom Chess Piece" required>
+                </div>
 
-    try {
-      // A. Upload STL to Cloudinary
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", UPLOAD_PRESET);
+                <div class="form-group">
+                    <label>Instructions / Details</label>
+                    <textarea id="instructions" rows="4" placeholder="Size, color, infill, or any specific requirements..." required></textarea>
+                </div>
 
-      const res = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
-      const data = await res.json();
-      const fileUrl = data.secure_url;
+                <div class="form-group">
+                    <label>Upload 3D Model (.stl, .obj)</label>
+                    <input type="file" id="stl-file" accept=".stl,.obj" required 
+                           style="border: 1px dashed #ccc; padding: 10px; width: 100%;">
+                    <small style="color:#888;">Max size: 10MB</small>
+                </div>
 
-      // B. Upload Reference Image (Optional)
-      let refUrl = "";
-      if (refFile) {
-        const refData = new FormData();
-        refData.append("file", refFile);
-        refData.append("upload_preset", UPLOAD_PRESET);
-        const refRes = await fetch(CLOUDINARY_URL, { method: "POST", body: refData });
-        const refJson = await refRes.json();
-        refUrl = refJson.secure_url;
-      }
+                <div class="form-group">
+                    <label>Reference Image (Optional)</label>
+                    <input type="file" id="ref-img" accept="image/*" 
+                           style="border: 1px dashed #ccc; padding: 10px; width: 100%;">
+                </div>
 
-      // C. Fetch User Phone from Firestore
-      // (We need to get the phone number we saved in complete-profile.html)
-      let userPhone = "Not Provided";
-      const userSnap = await getDoc(doc(db, "users", currentUser.uid));
-      if (userSnap.exists() && userSnap.data().phone) {
-        userPhone = userSnap.data().phone;
-      }
+                <button type="submit" class="btn full-width" style="margin-top: 20px;">Submit Order</button>
+            </form>
+        </div>
+    </section>
 
-      // D. Save to Firebase Orders
-      const orderData = {
-        userId: currentUser.uid,
-        userName: currentUser.displayName,
-        userEmail: currentUser.email,
-        userPhone: userPhone, // Added Phone Here
-        projectName: projectName,
-        instructions: instructions,
-        modelUrl: fileUrl,
-        referenceImgUrl: refUrl,
-        status: "pending",
-        createdAt: new Date().toISOString()
-      };
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 MRYM Studio. All rights reserved.</p>
+        </div>
+    </footer>
 
-      const docRef = await addDoc(collection(db, "custom_orders"), orderData);
+    <div id="cart-modal" class="cart-modal">
+        <div id="cart-view">
+            <div class="cart-header">
+                <h3>Your Cart</h3>
+                <button class="close-cart" onclick="closeCart()">×</button>
+            </div>
+            <div id="cart-items" class="cart-items">
+                <p style="text-align:center; color:#999; margin-top:20px;">Cart is empty.</p>
+            </div>
+            <div class="cart-footer">
+                <div class="total-row">
+                    <span>Total:</span>
+                    <span id="cart-total">₹0.00</span>
+                </div>
+                <button class="btn full-width" onclick="checkout()">Checkout via WhatsApp</button>
+            </div>
+        </div>
+    </div>
 
-      // E. Send to Google Sheets
-      const sheetData = { ...orderData, orderId: docRef.id };
+    <script src="js/main.js"></script>
+    <script type="module" src="js/cart.js"></script>
+    
+    <script type="module">
+      import { db, auth } from "./js/firebase-config.js";
+      import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { collection, addDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sheetData)
-      }).then(() => console.log("Sent to Sheets"));
+      // CLOUDINARY CONFIG
+      const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dmyxbwrvn/upload";
+      const UPLOAD_PRESET = "mrym_uploads";
 
-      alert("Order placed successfully!");
-      window.location.href = "index.html";
+      // GOOGLE SCRIPT URL
+      const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyN6eCipJDecsJfJBG8ck3FXrh-7-yy6JYSwxRAQd7UkdkhOGXaDrGPfjssXr5kFFmYfg/exec";
 
-    } catch (error) {
-      console.error(error);
-      alert("Error: " + error.message);
-      btn.textContent = "Submit Order";
-      btn.disabled = false;
-    }
-  });
-</script>
+      let currentUser = null;
+
+      // Check Login Status
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          currentUser = user;
+        } else {
+          // If not logged in, force them to login page
+          window.location.href = "login.html";
+        }
+      });
+
+      // Handle Form Submit
+      document.getElementById('custom-order-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = e.target.querySelector('button');
+        const originalText = btn.textContent;
+        btn.textContent = "Uploading...";
+        btn.disabled = true;
+
+        const projectName = document.getElementById('project-name').value;
+        const instructions = document.getElementById('instructions').value;
+        const file = document.getElementById('stl-file').files[0];
+        const refFile = document.getElementById('ref-img').files[0];
+
+        try {
+          // A. Upload STL to Cloudinary
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("upload_preset", UPLOAD_PRESET);
+
+          const res = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
+          const data = await res.json();
+          const fileUrl = data.secure_url;
+
+          // B. Upload Reference Image (Optional)
+          let refUrl = "";
+          if (refFile) {
+            const refData = new FormData();
+            refData.append("file", refFile);
+            refData.append("upload_preset", UPLOAD_PRESET);
+            const refRes = await fetch(CLOUDINARY_URL, { method: "POST", body: refData });
+            const refJson = await refRes.json();
+            refUrl = refJson.secure_url;
+          }
+
+          // C. Fetch User Phone from Firestore
+          let userPhone = "Not Provided";
+          if (currentUser) {
+              const userSnap = await getDoc(doc(db, "users", currentUser.uid));
+              if (userSnap.exists() && userSnap.data().phone) {
+                userPhone = userSnap.data().phone;
+              }
+          }
+
+          // D. Save to Firebase Orders
+          const orderData = {
+            userId: currentUser.uid,
+            userName: currentUser.displayName || "User",
+            userEmail: currentUser.email,
+            userPhone: userPhone,
+            projectName: projectName,
+            instructions: instructions,
+            modelUrl: fileUrl,
+            referenceImgUrl: refUrl,
+            status: "pending",
+            createdAt: new Date().toISOString()
+          };
+
+          const docRef = await addDoc(collection(db, "custom_orders"), orderData);
+
+          // E. Send to Google Sheets
+          const sheetData = { ...orderData, orderId: docRef.id };
+
+          // Use 'no-cors' mode (This sends data but you won't get a visible success response from Google)
+          fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sheetData)
+          }).catch(err => console.error("Sheet Error:", err));
+
+          alert("Order placed successfully! We will contact you soon.");
+          window.location.href = "index.html";
+
+        } catch (error) {
+          console.error(error);
+          alert("Error: " + error.message);
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+      });
+    </script>
+</body>
+
+</html>
