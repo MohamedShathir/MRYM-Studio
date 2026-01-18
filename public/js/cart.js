@@ -13,7 +13,6 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         
-        // LOGGED IN: Show Profile Dropdown
         if(authContainer) {
             authContainer.innerHTML = `
                 <div class="profile-dropdown">
@@ -28,14 +27,12 @@ onAuthStateChanged(auth, async (user) => {
             `;
         }
 
-        // Load Cart from DB
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists() && docSnap.data().cart) {
             cart = docSnap.data().cart;
             updateCartUI();
         }
     } else {
-        // LOGGED OUT: Show Signup & Login Links
         currentUser = null;
         if(authContainer) {
             authContainer.innerHTML = `
@@ -46,7 +43,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- 2. Dropdown & Logout Functions ---
 window.toggleProfileMenu = function() {
     const menu = document.getElementById("dropdown-menu");
     if(menu) menu.classList.toggle("show");
@@ -74,13 +70,19 @@ window.handleLogout = async function() {
     }
 };
 
-// ... (KEEP THE REST OF YOUR CART LOGIC: addToCart, removeFromCart, saveCart, updateCartUI, checkout) ...
-// (If you want me to paste the full file again, let me know, but the bottom half remains unchanged)
-// --- 3. Cart Logic (Standard) ---
+// --- 2. THE ADD TO CART FUNCTION ---
 window.addToCart = async function(product) {
+    console.log("Cart received:", product); // Debug check
+
     const existing = cart.find(item => item.name === product.name);
-    if (existing) existing.quantity++;
-    else cart.push({ ...product, quantity: 1 });
+    if (existing) {
+        existing.quantity++;
+    } else {
+        // Ensure price is a number
+        const price = parseFloat(product.price) || 0;
+        cart.push({ ...product, price: price, quantity: 1 });
+    }
+    
     saveCart();
     updateCartUI();
     openCart();
@@ -128,7 +130,6 @@ function updateCartUI() {
 window.checkout = async function() {
     if (cart.length === 0) return alert("Cart is empty!");
 
-    // Fetch Address for checkout message
     let addressInfo = "";
     if (currentUser) {
         const docSnap = await getDoc(doc(db, "users", currentUser.uid));
@@ -150,9 +151,17 @@ window.checkout = async function() {
     window.open(`https://wa.me/${PHONE_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 };
 
-// Toggle Modal
 window.toggleCart = () => document.getElementById('cart-modal').classList.toggle('active');
 window.openCart = () => document.getElementById('cart-modal').classList.add('active');
 window.closeCart = () => document.getElementById('cart-modal').classList.remove('active');
 
 document.addEventListener('DOMContentLoaded', updateCartUI);
+
+// --- 3. NEW: LISTENER FOR PRODUCT LOADER ---
+// This catches the 'add-to-cart' signal from the product page
+document.addEventListener('add-to-cart', (event) => {
+    const productData = event.detail;
+    if(productData) {
+        window.addToCart(productData);
+    }
+});
